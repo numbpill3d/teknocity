@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYBER_PROTOCOL.exe</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Courier New', monospace;
+            color: #0ff;
+            cursor: none;
+        }
+
+        #canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            filter: bloom(1px) contrast(1.2);
+        }
+
+        .cyber-cursor {
+            width: 20px;
+            height: 20px;
+            position: fixed;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M16,0 L32,16 L16,32 L0,16 Z" fill="%230ff"/></svg>') center/cover;
+            pointer-events: none;
+            z-index: 10000;
+            mix-blend-mode: screen;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.2) rotate(180deg); }
+            100% { transform: scale(1) rotate(360deg); }
+        }
+
+        .scanner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(transparent 50%, rgba(0, 255, 255, 0.05) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            animation: scan 10s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(100vh); }
+        }
+
+        .interface {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn {
+            background: rgba(0, 255, 255, 0.1);
+            border: 2px solid #0ff;
+            color: #0ff;
+            padding: 15px 30px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            position: relative;
+            overflow: hidden;
+            text-shadow: 0 0 5px #0ff;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.2), transparent);
+            animation: btn-shine 3s infinite;
+        }
+
+        @keyframes btn-shine {
+            0% { left: -100%; }
+            20% { left: 100%; }
+            100% { left: 100%; }
+        }
+
+        .hud {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #0ff;
+            padding: 20px;
+            font-size: 12px;
+            max-width: 200px;
+            text-shadow: 0 0 5px #0ff;
+        }
+
+        .status {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            color: #0ff;
+            font-family: monospace;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .glitch-text {
+            animation: glitch 0.3s infinite;
+        }
+
+        @keyframes glitch {
+            0% { transform: skew(0deg); }
+            20% { transform: skew(10deg); }
+            40% { transform: skew(-10deg); }
+            60% { transform: skew(5deg); }
+            80% { transform: skew(-5deg); }
+            100% { transform: skew(0deg); }
+        }
+    .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #0ff;
+            padding: 20px;
+            width: 80%;
+            max-width: 600px;
+            height: 80vh;
+            overflow-y: auto;
+            z-index: 1000;
+            animation: glitch-in 0.3s;
+        }
+
+        .popup-content {
+            color: #0ff;
+            text-shadow: 0 0 5px #0ff;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: 1px solid #0ff;
+            color: #0ff;
+            cursor: pointer;
+            padding: 5px 10px;
+        }
+
+        .marquee-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 31px;
+            background: rgba(0, 0, 0, 0.8);
+            overflow: hidden;
+        }
+
+        .marquee {
+            display: flex;
+            gap: 20px;
+            animation: scroll 30s linear infinite;
+            white-space: nowrap;
+        }
+
+        @keyframes scroll {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        @keyframes glitch-in {
+            0% { clip-path: inset(100% 0 0 0); }
+            20% { clip-path: inset(45% 0 54% 0); }
+            40% { clip-path: inset(23% 0 34% 0); }
+            60% { clip-path: inset(66% 0 33% 0); }
+            80% { clip-path: inset(14% 0 85% 0); }
+            100% { clip-path: inset(0 0 0 0); }
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .gallery-item {
+            border: 1px solid #0ff;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .gallery-item img {
+            max-width: 100%;
+            height: auto;
+            filter: drop-shadow(0 0 5px #0ff);
+        }
+
+        .profile-section {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #0ff;
+            padding-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Popups -->
+    <div id="profilePopup" class="popup">
+        <button class="close-btn">[X]</button>
+        <div class="popup-content">
+            <div class="profile-section">
+                <h2>IDENTITY_MATRIX</h2>
+                <p>STATUS: [REDACTED]</p>
+                <p>LOCATION: VOID://SECTOR_31</p>
+                <p>NEURAL_LINK: UNSTABLE</p>
+            </div>
+            <div class="profile-section">
+                <h2>SYSTEM_STATS</h2>
+                <p>CORE_INTEGRITY: 47%</p>
+                <p>MEMORY_FRAGMENTS: 13,287</p>
+                <p>REALITY_ANCHOR: DEGRADING</p>
+            </div>
+            <div class="profile-section">
+                <h2>VOID_SIGNATURE</h2>
+                <p>[DATA_EXPUNGED]</p>
+                <p>LAST_SEEN: ERROR://TIME_NOT_FOUND</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="linksPopup" class="popup">
+        <button class="close-btn">[X]</button>
+        <div class="popup-content">
+            <h2>NEURAL_CONNECTIONS</h2>
+            <ul>
+                <li><a href="#void">void.systems</a></li>
+                <li><a href="#neural">neural.link</a></li>
+                <li><a href="#ghost">ghost.shell</a></li>
+                <li><a href="#cyber">cyber.decay</a></li>
+                <li><a href="#digital">digital.dreams</a></li>
+            </ul>
+            <h2>VOID_NETWORKS</h2>
+            <ul>
+                <li><a href="#matrix">matrix.protocol</a></li>
+                <li><a href="#quantum">quantum.echo</a></li>
+                <li><a href="#binary">binary.waste</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="galleryPopup" class="popup">
+        <button class="close-btn">[X]</button>
+        <div class="popup-content">
+            <div class="gallery-grid">
+                <div class="gallery-item">
+                    <img src="/api/placeholder/200/150" alt="MEMORY_FRAGMENT_1">
+                    <p>VOID_ECHO_1</p>
+                </div>
+                <div class="gallery-item">
+                    <img src="/api/placeholder/200/150" alt="MEMORY_FRAGMENT_2">
+                    <p>VOID_ECHO_2</p>
+                </div>
+                <div class="gallery-item">
+                    <img src="/api/placeholder/200/150" alt="MEMORY_FRAGMENT_3">
+                    <p>VOID_ECHO_3</p>
+                </div>
+                <div class="gallery-item">
+                    <img src="/api/placeholder/200/150" alt="MEMORY_FRAGMENT_4">
+                    <p>VOID_ECHO_4</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 88x31 Marquee -->
+    <div class="marquee-container">
+        <div class="marquee">
+            <img src="/api/placeholder/88/31" alt="button1">
+            <img src="/api/placeholder/88/31" alt="button2">
+            <img src="/api/placeholder/88/31" alt="button3">
+            <img src="/api/placeholder/88/31" alt="button4">
+            <img src="/api/placeholder/88/31" alt="button5">
+            <img src="/api/placeholder/88/31" alt="button6">
+            <!-- Duplicate for seamless loop -->
+            <img src="/api/placeholder/88/31" alt="button1">
+            <img src="/api/placeholder/88/31" alt="button2">
+            <img src="/api/placeholder/88/31" alt="button3">
+            <img src="/api/placeholder/88/31" alt="button4">
+            <img src="/api/placeholder/88/31" alt="button5">
+            <img src="/api/placeholder/88/31" alt="button6">
+        </div>
+    </div>
+    <canvas id="canvas"></canvas>
+    <div class="cyber-cursor"></div>
+    <div class="scanner"></div>
+    <div class="interface">
+        <button class="btn" id="hack">Initialize Hack</button>
+        <button class="btn" id="glitch">System Glitch</button>
+        <button class="btn" id="decrypt">Decrypt Reality</button>
+        <button class="btn" id="openProfile">Access Identity</button>
+        <button class="btn" id="openLinks">Neural Links</button>
+        <button class="btn" id="openGallery">Memory Fragments</button>
+    </div>
+    <div class="hud">
+        <div class="glitch-text">
+            > SYSTEM_ACCESS: GRANTED
+            > REALITY_MATRIX: UNSTABLE
+            > DECRYPTION_STATUS: 23%
+            > WARNING: Neural breach detected...
+        </div>
+    </div>
+    <div class="status">
+        <div class="glitch-text">
+            CORE_SYSTEMS: DEGRADING
+            REALITY_ENGINE: COMPROMISED
+            NEURAL_LINK: 47%
+        </div>
+    </div>
+
+    <script>
+        // Initialize cyber matrix
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x00ffff, 0.01);
+        
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ 
+            canvas: document.getElementById('canvas'), 
+            antialias: true
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        // Custom cursor tracking
+        document.addEventListener('mousemove', (e) => {
+            document.querySelector('.cyber-cursor').style.left = e.clientX + 'px';
+            document.querySelector('.cyber-cursor').style.top = e.clientY + 'px';
+        });
+
+        // Neon material creation
+        function createNeonMaterial(color) {
+            return new THREE.MeshStandardMaterial({
+                color: color,
+                emissive: color,
+                emissiveIntensity: 2,
+                metalness: 0.8,
+                roughness: 0.2
+            });
+        }
+
+        // Grid system
+        const gridHelper = new THREE.GridHelper(200, 50, 0x00ffff, 0x00ffff);
+        scene.add(gridHelper);
+
+        // Building generation
+        function createBuilding(x, z) {
+            const height = Math.random() * 50 + 20;
+            const geometry = new THREE.BoxGeometry(10, height, 10);
+            const material = createNeonMaterial(0x000000);
+            const building = new THREE.Mesh(geometry, material);
+            
+            // Window creation
+            const windowGeometry = new THREE.PlaneGeometry(0.5, 0.5);
+            const windowMaterial = createNeonMaterial(0x00ffff);
+            
+            for(let i = 0; i < height; i += 2) {
+                for(let j = 0; j < 4; j++) {
+                    if(Math.random() > 0.3) {
+                        const window = new THREE.Mesh(windowGeometry, windowMaterial);
+                        window.position.y = i - height/2;
+                        window.rotation.y = j * Math.PI/2;
+                        switch(j) {
+                            case 0: window.position.z = 5.1; window.position.x = Math.random() * 8 - 4; break;
+                            case 1: window.position.x = 5.1; window.position.z = Math.random() * 8 - 4; break;
+                            case 2: window.position.z = -5.1; window.position.x = Math.random() * 8 - 4; break;
+                            case 3: window.position.x = -5.1; window.position.z = Math.random() * 8 - 4; break;
+                        }
+                        building.add(window);
+                    }
+                }
+            }
+            
+            building.position.set(x, height/2, z);
+            scene.add(building);
+            return building;
+        }
+
+        // Generate cityscape
+        const buildings = [];
+        for(let x = -100; x <= 100; x += 20) {
+            for(let z = -100; z <= 100; z += 20) {
+                if(Math.abs(x) > 10 || Math.abs(z) > 10) { // Keep center clear
+                    buildings.push(createBuilding(x, z));
+                }
+            }
+        }
+
+        // Holographic effects
+        function createHologram() {
+            const geometry = new THREE.TorusGeometry(5, 0.5, 16, 100);
+            const material = new THREE.MeshBasicMaterial({
+                color: 0x00ffff,
+                transparent: true,
+                opacity: 0.5,
+                wireframe: true
+            });
+            const hologram = new THREE.Mesh(geometry, material);
+            hologram.position.y = 10;
+            scene.add(hologram);
+            return hologram;
+        }
+
+        const holograms = [
+            createHologram(),
+            createHologram(),
+            createHologram()
+        ];
+
+        // Rain effect
+        function createRainDrop() {
+            const geometry = new THREE.BufferGeometry();
+            const material = new THREE.LineBasicMaterial({
+                color: 0x00ffff,
+                transparent: true,
+                opacity: 0.4
+            });
+
+            const points = [
+                new THREE.Vector3(0, 0, 0),
+                new THREE.Vector3(0, -1, 0)
+            ];
+            geometry.setFromPoints(points);
+
+            const line = new THREE.Line(geometry, material);
+            line.position.set(
+                Math.random() * 200 - 100,
+                Math.random() * 100 + 50,
+                Math.random() * 200 - 100
+            );
+            scene.add(line);
+            return line;
+        }
+
+        const raindrops = Array(1000).fill().map(() => createRainDrop());
+
+        // Camera setup
+        camera.position.set(0, 30, 50);
+        let cameraTarget = new THREE.Vector3(0, 0, 0);
+
+        // Animation variables
+        let time = 0;
+        let isGlitching = false;
+        let isHacking = false;
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.016;
+
+            // Update rain
+            raindrops.forEach(drop => {
+                drop.position.y -= 1;
+                if(drop.position.y < 0) {
+                    drop.position.y = Math.random() * 100 + 50;
+                    drop.position.x = Math.random() * 200 - 100;
+                    drop.position.z = Math.random() * 200 - 100;
+                }
+                drop.material.opacity = Math.random() * 0.3 + 0.1;
+            });
+
+            // Update holograms
+            holograms.forEach((hologram, i) => {
+                hologram.rotation.x = time + i;
+                hologram.rotation.y = time * 0.5 + i;
+                hologram.position.y = 10 + Math.sin(time + i) * 2;
+                hologram.material.opacity = 0.3 + Math.sin(time * 2 + i) * 0.2;
+            });
+
+            // Building effects
+            buildings.forEach((building, i) => {
+                if(isGlitching) {
+                    building.position.y += Math.sin(time * 10 + i) * 0.1;
+                    building.children.forEach(window => {
+                        window.material.emissiveIntensity = Math.random() * 3;
+                    });
+                }
+            });
+
+            // Camera movement
+            if(isHacking) {
+                camera.position.x = Math.sin(time) * 80;
+                camera.position.z = Math.cos(time) * 80;
+                camera.position.y = 30 + Math.sin(time * 2) * 10;
+            } else {
+                camera.position.x = Math.sin(time * 0.2) * 50;
+                camera.position.z = Math.cos(time * 0.2) * 50 + 50;
+                camera.position.y = 30;
+            }
+            camera.lookAt(cameraTarget);
+
+            renderer.render(scene, camera);
+        }
+
+        // Event handlers
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        document.getElementById('hack').addEventListener('click', () => {
+            isHacking = !isHacking;
+            document.querySelector('.status').innerHTML = `
+                <div class="glitch-text">
+                    CORE_SYSTEMS: ${isHacking ? 'COMPROMISED' : 'DEGRADING'}
+                    REALITY_ENGINE: UNSTABLE
+                    NEURAL_LINK: ${isHacking ? '92%' : '47%'}
+                </div>
+            `;
+        });
+
+        document.getElementById('glitch').addEventListener('click', () => {
+            isGlitching = !isGlitching;
+            document.querySelector('.hud').innerHTML = `
+                <div class="glitch-text">
+                    > SYSTEM_ACCESS: ${isGlitching ? 'CORRUPTED' : 'GRANTED'}
+                    > REALITY_MATRIX: UNSTABLE
+                    > DECRYPTION_STATUS: ${isGlitching ? 'ERROR' : '23%'}
+                    > WARNING: System integrity failing...
+                </div>
+            `;
+        });
+
+        document.getElementById('decrypt').addEventListener('click', () => {
+            cameraTarget = new THREE.Vector3(
+                (Math.random() - 0.5) * 40,
+                Math.random() * 20,
+                (Math.random() - 0.5) * 40
+            );
+        });
+
+        // Popup handlers
+        function setupPopup(buttonId, popupId) {
+            const button = document.getElementById(buttonId);
+            const popup = document.getElementById(popupId);
+            const closeBtn = popup.querySelector('.close-btn');
+
+            button.addEventListener('click', () => {
+                popup.style.display = 'block';
+                isHacking = false; // Pause camera movement
+            });
+
+            closeBtn.addEventListener('click', () => {
+                popup.style.display = 'none';
+            });
+
+            // Close on click outside
+            window.addEventListener('click', (e) => {
+                if (e.target === popup) {
+                    popup.style.display = 'none';
+                }
+            });
+        }
+
+        setupPopup('openProfile', 'profilePopup');
+        setupPopup('openLinks', 'linksPopup');
+        setupPopup('openGallery', 'galleryPopup');
+
+        // Initialize animation
+        animate();
+    </script>
+</body>
+</html>
